@@ -13,16 +13,24 @@ import SendIcon from "@mui/icons-material/Send";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 
 const ChatWindow = () => {
+  // Using the socket from the OutletContext
   const { socket } = useOutletContext();
+
+  // State variables for handling messages, chat history and typing status
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [typing, setTyping] = useState(false);
+
+  // Getting the roomId from the URL parameters
   const { roomId } = useParams();
+
   const navigate = useNavigate();
 
+  // useEffect hook to perform side effects
   useEffect(() => {
     if (!socket) return;
 
+    // Listening for 'message-from-server' event from the server and updating the chat
     socket.on("message-from-server", (data) => {
       setChat((prev) => [
         ...prev,
@@ -30,30 +38,40 @@ const ChatWindow = () => {
       ]);
     });
 
+    // Listening for 'typing-started-from-server' and 'typing-stopped-from-server' events from the server
     socket.on("typing-started-from-server", () => setTyping(true));
     socket.on("typing-stopped-from-server", () => setTyping(false));
-  }, [socket]);
+  }, [socket]); 
 
+  // Function to handle form submission
   function handleForm(e) {
     e.preventDefault();
+    // Emitting 'send-message' event to the server
     socket.emit("send-message", { message, roomId });
     setChat((prev) => [...prev, { message, received: false }]);
     setMessage("");
   }
 
+  // Function to handle room removal
   async function removeRoom() {
+    // Emitting 'room-removed' event to the server
     socket.emit("room-removed", { roomId });
     navigate("/");
   }
 
+  // State variable for the typing timeout
   const [typingTimeout, setTypingTimeout] = useState(null);
 
+  // Function to handle input changes
   function handleInput(e) {
     setMessage(e.target.value);
+    // Emitting 'typing-started' event to the server
     socket.emit("typing-started", { roomId });
 
+    // If there's a typing timeout, clear it
     if (typingTimeout) clearTimeout(typingTimeout);
 
+    // Setting a new typing timeout to emit 'typing-stopped' event to the server
     setTypingTimeout(
       setTimeout(() => {
         socket.emit("typing-stopped", { roomId });
