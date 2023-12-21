@@ -4,7 +4,7 @@ import createMessageHandler from "./controllers/MessageController.js";
 
 const sockets = ( socket ) => {
     const { typingStarted, typingStopped } = createTypinghandlers(socket);
-    const { createRoom, newRoomCreated } = createRoomHandlers(socket);
+    const { createRoom, newRoomCreated, roomRemoved } = createRoomHandlers(socket);
     const { sendMessage } = createMessageHandler(socket);
 
 
@@ -17,6 +17,8 @@ const sockets = ( socket ) => {
     socket.on("join-room", createRoom);
 
     socket.on("new-room-created", newRoomCreated);
+
+    socket.on("room-removed", roomRemoved);
 
     socket.on('disconnect', () => {
         console.log("User Left.");

@@ -1,5 +1,7 @@
+import React, { useEffect, useState } from "react";
 import {
   Box,
+  Button,
   Card,
   IconButton,
   InputAdornment,
@@ -8,8 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import { useEffect, useState } from "react";
-import { useOutletContext, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 
 const ChatWindow = () => {
   const { socket } = useOutletContext();
@@ -17,12 +18,16 @@ const ChatWindow = () => {
   const [chat, setChat] = useState([]);
   const [typing, setTyping] = useState(false);
   const { roomId } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!socket) return;
 
     socket.on("message-from-server", (data) => {
-      setChat((prev) => [...prev, { message: data.message, received: true }]);
+      setChat((prev) => [
+        ...prev,
+        { message: data.message, received: true },
+      ]);
     });
 
     socket.on("typing-started-from-server", () => setTyping(true));
@@ -36,7 +41,12 @@ const ChatWindow = () => {
     setMessage("");
   }
 
-  const [typingTimeout, settypingTimeout] = useState(null);
+  async function removeRoom() {
+    socket.emit("room-removed", { roomId });
+    navigate("/");
+  }
+
+  const [typingTimeout, setTypingTimeout] = useState(null);
 
   function handleInput(e) {
     setMessage(e.target.value);
@@ -44,7 +54,7 @@ const ChatWindow = () => {
 
     if (typingTimeout) clearTimeout(typingTimeout);
 
-    settypingTimeout(
+    setTypingTimeout(
       setTimeout(() => {
         socket.emit("typing-stopped", { roomId });
       }, 1000)
@@ -54,20 +64,36 @@ const ChatWindow = () => {
   return (
     <Card
       sx={{
-        padding: 2,
-        marginTop: 10,
-        width: "60%",
-        backgroundColor: "gray",
+        padding: 3,
+        marginTop: 5,
+        width: "70%",
+        backgroundColor: "#f9f9f9",
+        borderRadius: "15px",
+        boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
       }}
     >
-      {
-        roomId && <Typography>Room: {roomId}</Typography>
-      }
-      <Box sx={{ marginBottom: 5 }}>
-        {chat.map((data) => (
+      <Typography variant="h4" sx={{ marginBottom: 3, color: "#333" }}>
+        Let's Chat!
+      </Typography>
+
+      {roomId && (
+        <Typography variant="subtitle1" sx={{ color: "#555" }}>
+          Room: {roomId}
+        </Typography>
+      )}
+
+      <Box sx={{ marginBottom: 3 }}>
+        {chat.map((data, index) => (
           <Typography
-            sx={{ textAlign: data.received ? "left" : "right" }}
-            key={data.message}
+            key={index}
+            sx={{
+              textAlign: data.received ? "left" : "right",
+              backgroundColor: data.received ? "#e0e0e0" : "#3f51b5",
+              color: data.received ? "#333" : "#fff",
+              padding: 2,
+              borderRadius: "8px",
+              marginBottom: 2,
+            }}
           >
             {data.message}
           </Typography>
@@ -76,29 +102,40 @@ const ChatWindow = () => {
 
       <Box component="form" onSubmit={handleForm}>
         {typing && (
-          <InputLabel sx={{ color: "white" }} shrink htmlFor="message-input">
-            Typing
+          <InputLabel sx={{ color: "#777", marginBottom: 1 }} shrink htmlFor="message-input">
+            Someone is typing...
           </InputLabel>
         )}
 
         <OutlinedInput
-          sx={{ backgroundColor: "white" }}
           fullWidth
           size="small"
           id="message-input"
           value={message}
-          placeholder="Write Your Message"
-          inputProps={{ "aria-label": "search google maps" }}
+          placeholder="Write your message"
+          sx={{ backgroundColor: "#fff" }}
           onChange={handleInput}
           endAdornment={
             <InputAdornment position="end">
-              <IconButton type="submit" edge="end">
+              <IconButton type="submit" edge="end" sx={{ color: "#3f51b5" }}>
                 <SendIcon />
               </IconButton>
             </InputAdornment>
           }
         />
       </Box>
+
+      {roomId && (
+        <Button
+          size="small"
+          variant="contained"
+          color="error"
+          onClick={removeRoom}
+          sx={{ marginTop: 3 }}
+        >
+          Delete Room
+        </Button>
+      )}
     </Card>
   );
 };

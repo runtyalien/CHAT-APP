@@ -7,16 +7,21 @@ const createRoomHandlers = (socket) => {
     //socket.broadcast.emit("new-room-created");
   };
 
-  const newRoomCreated = ({ roomId }) => {
+  const newRoomCreated = ({ roomId, userId }) => {
     const room = new Room({
         name:'Test',
         roomId
     });
     room.save();
-    socket.broadcast.emit("new-room-created", { roomId });
+    socket.emit("new-room-created", { room });
   };
 
-  return { createRoom, newRoomCreated };
+  const roomRemoved = async ({ roomId }) => {
+    await Room.deleteOne({ roomId });
+    socket.broadcast.emit("room-removed", { roomId });
+  }
+
+  return { createRoom, newRoomCreated, roomRemoved };
 };
 
 export default createRoomHandlers;

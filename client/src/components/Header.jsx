@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Button, Box } from "@mui/material";
+import { Card, Button, Box, Typography } from "@mui/material";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
 import Cookies from "js-cookies";
@@ -11,9 +11,7 @@ const Header = ({ socket, userId, setUserId }) => {
   function createNewRoom() {
     const roomId = uuidv4();
     navigate(`/room/${roomId}`);
-    socket.emit("new-room-created", { roomId });
-    console.log(roomId);
-    setRooms((prevRooms) => [...prevRooms, roomId]);
+    socket.emit("new-room-created", { roomId, userId });
   }
 
   function login() {
@@ -41,18 +39,30 @@ const Header = ({ socket, userId, setUserId }) => {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on("new-room-created", ({ roomId }) => {
-      setRooms([...rooms, roomId]);
-      //setRooms((prevRooms) => [...prevRooms, roomId]);
+    socket.on("new-room-created", ({ room }) => {
+      console.log(room);
+      //setRooms([...rooms, room]);
+    });
+
+    socket.on("room-removed", ({ roomId }) => {
+      setRooms(rooms.filter((room) => room.roomId !== roomId));
     });
   }, [socket]);
 
   return (
-    <Card sx={{ marginTop: 5, backgroundColor: "gray" }} raised>
+    <Card sx={{ padding: 2, marginTop: 5, backgroundColor: "#3f51b5" }} raised>
       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
         <Box>
           <Link to="/" style={{ textDecoration: "none" }}>
-            <Button sx={{ color: "white" }} variant="text">
+            <Button
+              sx={{
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "#1a237e", // Adjust hover background color
+                },
+              }}
+              variant="text"
+            >
               Home
             </Button>
           </Link>
@@ -63,7 +73,15 @@ const Header = ({ socket, userId, setUserId }) => {
               to={`/room/${room.roomId}`}
               style={{ textDecoration: "none" }}
             >
-              <Button sx={{ color: "white" }} variant="text">
+              <Button
+                sx={{
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "#1a237e", // Adjust hover background color
+                  },
+                }}
+                variant="text"
+              >
                 {room.name}
               </Button>
             </Link>
@@ -73,20 +91,43 @@ const Header = ({ socket, userId, setUserId }) => {
           {userId && (
             <>
               <Button
-                sx={{ color: "white" }}
+                sx={{
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "#1a237e", // Adjust hover background color
+                  },
+                }}
                 variant="text"
                 onClick={createNewRoom}
               >
                 New Room
               </Button>
-              <Button sx={{ color: "white" }} variant="text" onClick={logout}>
+              <Button
+                sx={{
+                  color: "white",
+                  "&:hover": {
+                    backgroundColor: "#1a237e", // Adjust hover background color
+                  },
+                }}
+                variant="text"
+                onClick={logout}
+              >
                 Logout
               </Button>
             </>
           )}
 
           {!userId && (
-            <Button sx={{ color: "white" }} variant="text" onClick={login}>
+            <Button
+              sx={{
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "#1a237e", // Adjust hover background color
+                },
+              }}
+              variant="text"
+              onClick={login}
+            >
               Login
             </Button>
           )}
@@ -97,3 +138,4 @@ const Header = ({ socket, userId, setUserId }) => {
 };
 
 export default Header;
+
